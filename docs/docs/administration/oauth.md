@@ -108,7 +108,7 @@ Auto Launch can also be enabled on a per-request basis by navigating to `/auth/l
 
 By default a user has one linked OAuth account. With **Allow Account Sharing** enabled, several OAuth accounts can log in to the same user and share its entire library. An OAuth account can still only be linked to one user.
 
-The first linked account is the **owner**. Other accounts are **members**: they have full access to the library, but cannot invite or remove accounts, change the password or change the email. Logging in with the user's password has the same rights as the owner. Claims (role, quota, storage label) and the profile picture are only synchronized from the owner.
+The first linked account is the **owner**. Other accounts are **members**: they have full access to the library, but cannot invite or remove accounts, change the password or change the email. Logging in with the user's password has the same rights as the owner. Claims (role, quota, storage label) are only synchronized from the owner. The profile picture is shared by everyone using the account and is never taken from the OAuth provider, so set it by editing the avatar in Immich.
 
 Manage linked accounts in **User Settings > Linked OAuth accounts**, or as an admin in **Administration > Users > (user)**.
 

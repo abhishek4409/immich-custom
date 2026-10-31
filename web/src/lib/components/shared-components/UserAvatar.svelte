@@ -91,7 +91,7 @@
       draggable="false"
     />
   {/if}
-  {#if showFallback}
+  {#if showFallback || !user.profileImagePath}
     <span
       class="flex size-full items-center justify-center font-medium uppercase select-none"
       class:text-xs={size === 'sm'}

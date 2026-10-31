@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { pipeline } from 'node:stream';
 import { Observable } from 'rxjs';
 import type { ImmichFile, UploadFile, UploadFiles } from 'src/types.js';
+import { PROFILE_IMAGE_MAX_SIZE } from 'src/constants.js';
 import { UploadFieldName } from 'src/dtos/asset-media.dto.js';
 import { RouteKey } from 'src/enum.js';
 import { AuthRequest } from 'src/middleware/auth.guard.js';
@@ -51,16 +52,19 @@ export class FileUploadInterceptor implements NestInterceptor {
   ) {
     this.logger.setContext(FileUploadInterceptor.name);
 
-    const instance = multer({
+    const options: multer.Options = {
       fileFilter: this.fileFilter.bind(this),
       storage: {
         _handleFile: this.handleFile.bind(this),
         _removeFile: this.removeFile.bind(this),
       },
-    });
+    };
+    const instance = multer(options);
 
     this.handlers = {
-      userProfile: instance.single(UploadFieldName.PROFILE_DATA),
+      userProfile: multer({ ...options, limits: { fileSize: PROFILE_IMAGE_MAX_SIZE } }).single(
+        UploadFieldName.PROFILE_DATA,
+      ),
       assetUpload: instance.fields([
         { name: UploadFieldName.ASSET_DATA, maxCount: 1 },
         { name: UploadFieldName.SIDECAR_DATA, maxCount: 1 },
