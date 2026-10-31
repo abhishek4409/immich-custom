@@ -140,17 +140,6 @@ export class UserRepository {
       .executeTakeFirst();
   }
 
-  @GenerateSql({ params: [DummyValue.STRING] })
-  getByOAuthId(oauthId: string) {
-    return this.db
-      .selectFrom('user')
-      .select(columns.userAdmin)
-      .select(withMetadata)
-      .where('user.oauthId', '=', oauthId)
-      .where('user.deletedAt', 'is', null)
-      .executeTakeFirst();
-  }
-
   @GenerateSql({ params: [DateTime.now().minus({ years: 1 })] })
   getDeletedAfter(target: DateTime) {
     return this.db.selectFrom('user').select(['id']).where('user.deletedAt', '<', target.toJSDate()).execute();
@@ -189,10 +178,6 @@ export class UserRepository {
       .returning(columns.userAdmin)
       .returning(withMetadata)
       .executeTakeFirstOrThrow();
-  }
-
-  async updateAll(dto: Updateable<UserTable>) {
-    await this.db.updateTable('user').set(dto).execute();
   }
 
   restore(id: string) {

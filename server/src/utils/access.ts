@@ -2,10 +2,13 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthSharedLink } from 'src/database.js';
 import { AuthDto } from 'src/dtos/auth.dto.js';
 import { PersonUserRole } from 'src/dtos/person.dto.js';
-import { AlbumUserRole, Permission } from 'src/enum.js';
+import { AlbumUserRole, Permission, UserOAuthIdentityRole } from 'src/enum.js';
 import { AccessRepository } from 'src/repositories/access.repository.js';
 import { PersonId } from 'src/repositories/person.repository.js';
 import { areSetsEqual, isSetSuperset, setDifference, setUnion } from 'src/utils/set.js';
+
+export const isOAuthMember = ({ session, apiKey }: AuthDto) =>
+  (session ?? apiKey)?.oauthRole === UserOAuthIdentityRole.Member;
 
 export type GrantedRequest = {
   requested: Permission[];

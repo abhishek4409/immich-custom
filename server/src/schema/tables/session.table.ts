@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from '@immich/sql-tools';
 import { UpdateIdColumn, UpdatedAtTrigger } from 'src/decorators.js';
+import { UserOAuthIdentityTable } from 'src/schema/tables/user-oauth-identity.table.js';
 import { UserTable } from 'src/schema/tables/user.table.js';
 
 @Table({ name: 'session' })
@@ -58,4 +59,7 @@ export class SessionTable {
 
   @Column({ nullable: true })
   oauthBearerToken!: string | null;
+
+  @ForeignKeyColumn(() => UserOAuthIdentityTable, { onUpdate: 'CASCADE', onDelete: 'CASCADE', nullable: true })
+  oauthIdentityId!: string | null;
 }

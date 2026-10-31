@@ -269,6 +269,13 @@
               />
 
               <SettingSwitch
+                title={$t('admin.oauth_allow_account_sharing')}
+                subtitle={$t('admin.oauth_allow_account_sharing_description')}
+                bind:checked={configToEdit.oauth.allowAccountSharing}
+                disabled={disabled || !configToEdit.oauth.enabled}
+              />
+
+              <SettingSwitch
                 title={$t('admin.oauth_auto_launch')}
                 subtitle={$t('admin.oauth_auto_launch_description')}
                 disabled={disabled || !configToEdit.oauth.enabled}

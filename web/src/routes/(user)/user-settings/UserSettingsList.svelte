@@ -112,7 +112,7 @@
   <SettingAccordion
     icon={mdiTwoFactorAuthentication}
     key={OpenQueryParam.OAUTH}
-    title={$t('oauth')}
+    title={$t('linked_oauth_accounts')}
     subtitle={$t('manage_your_oauth_connection')}
     isOpen={oauthOpen || undefined}
   >

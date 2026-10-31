@@ -4,6 +4,15 @@
 select
   "api_key"."id",
   "api_key"."permissions",
+  "api_key"."oauthIdentityId",
+  (
+    select
+      "user_oauth_identity"."role"
+    from
+      "user_oauth_identity"
+    where
+      "user_oauth_identity"."id" = "api_key"."oauthIdentityId"
+  ) as "oauthRole",
   (
     select
       to_json(obj)

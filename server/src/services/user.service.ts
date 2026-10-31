@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Updateable } from 'kysely';
 import { DateTime } from 'luxon';
 import type { ArgOf } from 'src/repositories/event.repository.js';
@@ -18,6 +18,7 @@ import { UserFindOptions } from 'src/repositories/user.repository.js';
 import { UserTable } from 'src/schema/tables/user.table.js';
 import { BaseService } from 'src/services/base.service.js';
 import { getCalendarHeatmap } from 'src/services/shared/user-methods.js';
+import { isOAuthMember } from 'src/utils/access.js';
 import { ImmichFileResponse } from 'src/utils/file.js';
 import { mimeTypes } from 'src/utils/mime-types.js';
 import { findOrFail } from 'src/utils/misc.js';
@@ -53,7 +54,14 @@ export class UserService extends BaseService {
     return getCalendarHeatmap(auth.user.id, dto, { asset: this.assetRepository });
   }
 
-  async updateMe({ user }: AuthDto, dto: UserUpdateMeDto): Promise<UserAdminResponseDto> {
+  async updateMe(auth: AuthDto, dto: UserUpdateMeDto): Promise<UserAdminResponseDto> {
+    const { user } = auth;
+
+    // either would let a member keep access after being removed
+    if (isOAuthMember(auth) && (dto.password || (dto.email && dto.email !== user.email))) {
+      throw new ForbiddenException('Only the account owner can change the password or email');
+    }
+
     if (dto.email) {
       const duplicate = await this.userRepository.getByEmail(dto.email);
       if (duplicate && duplicate.id !== user.id) {

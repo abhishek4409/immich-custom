@@ -13,6 +13,7 @@ import {
   SharedLinkType,
   SourceType,
   UserAvatarColor,
+  UserOAuthIdentityRole,
   UserStatus,
 } from 'src/enum.js';
 import { AlbumTable } from 'src/schema/tables/album.table.js';
@@ -58,6 +59,8 @@ export type Library = {
 export type AuthApiKey = {
   id: string;
   permissions: Permission[];
+  oauthIdentityId?: string | null;
+  oauthRole?: UserOAuthIdentityRole | null;
 };
 
 export type Activity = {
@@ -199,6 +202,8 @@ export type Album = Selectable<AlbumTable> & {
 export type AuthSession = {
   id: string;
   hasElevatedPermission: boolean;
+  oauthIdentityId?: string | null;
+  oauthRole?: UserOAuthIdentityRole | null;
 };
 
 export type Partner = {
@@ -380,8 +385,14 @@ export const columns = {
     'asset_file.isTransparent',
   ],
   authUser: ['user.id', 'user.name', 'user.email', 'user.isAdmin', 'user.quotaUsageInBytes', 'user.quotaSizeInBytes'],
-  authApiKey: ['api_key.id', 'api_key.permissions'],
-  authSession: ['session.id', 'session.updatedAt', 'session.pinExpiresAt', 'session.appVersion'],
+  authApiKey: ['api_key.id', 'api_key.permissions', 'api_key.oauthIdentityId'],
+  authSession: [
+    'session.id',
+    'session.updatedAt',
+    'session.pinExpiresAt',
+    'session.appVersion',
+    'session.oauthIdentityId',
+  ],
   user: userColumns,
   user2: user2Columns,
   userPrefix: [

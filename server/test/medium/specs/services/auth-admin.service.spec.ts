@@ -1,5 +1,6 @@
 import { Kysely } from 'kysely';
 import { LoggingRepository } from 'src/repositories/logging.repository.js';
+import { UserOAuthIdentityRepository } from 'src/repositories/user-oauth-identity.repository.js';
 import { UserRepository } from 'src/repositories/user.repository.js';
 import { DB } from 'src/schema/index.js';
 import { AuthAdminService } from 'src/services/auth-admin.service.js';
@@ -12,7 +13,7 @@ let defaultDatabase: Kysely<DB>;
 const setup = (db?: Kysely<DB>) => {
   return newMediumService(AuthAdminService, {
     database: db || defaultDatabase,
-    real: [UserRepository],
+    real: [UserOAuthIdentityRepository, UserRepository],
     mock: [LoggingRepository],
   });
 };

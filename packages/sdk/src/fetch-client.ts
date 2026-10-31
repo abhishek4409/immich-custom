@@ -315,6 +315,8 @@ export type AdminConfigNotificationsDto = {
 export type AdminConfigOAuthDto = {
     /** Account management URL */
     accountManagementUrl?: string;
+    /** Allow more than one OAuth account to log in to the same user */
+    allowAccountSharing: boolean;
     /** Allow insecure requests */
     allowInsecureRequests: boolean;
     /** Auto launch */
@@ -645,6 +647,36 @@ export type CalendarHeatmapResponseDto = {
     to: string;
     /** Total activity count over the period */
     totalCount: number;
+};
+export type UserOAuthIdentityResponseDto = {
+    /** Creation date */
+    createdAt: string;
+    /** Email of the OAuth account */
+    email: string;
+    /** Linked OAuth account ID */
+    id: string;
+    /** When the invite expires */
+    inviteExpiresAt: string | null;
+    /** Last login with this OAuth account */
+    lastLoginAt: string | null;
+    /** Name of the OAuth account */
+    name: string | null;
+    role: UserOAuthIdentityRole;
+    status: UserOAuthIdentityStatus;
+};
+export type UserOAuthIdentityListResponseDto = {
+    /** Whether the caller can invite, remove and promote linked accounts */
+    canManage: boolean;
+    /** The linked account the caller is logged in with */
+    currentIdentityId: string | null;
+    /** Linked OAuth accounts */
+    identities: UserOAuthIdentityResponseDto[];
+    /** Whether more than one OAuth account can be linked to an account */
+    sharingEnabled: boolean;
+};
+export type UserOAuthIdentityInviteDto = {
+    /** Email of the OAuth account to invite */
+    email: string;
 };
 export type AlbumsResponse = {
     defaultAssetOrder: AssetOrder;
@@ -1950,6 +1982,8 @@ export type NotificationUpdateDto = {
 export type OAuthConfigDto = {
     /** OAuth code challenge (PKCE) */
     codeChallenge?: string;
+    /** Override the configured OAuth prompt, used to pick a different account when linking */
+    prompt?: OAuthPrompt;
     /** OAuth redirect URI */
     redirectUri: string;
     /** OAuth state parameter */
@@ -4287,6 +4321,62 @@ export function getUserCalendarHeatmapAdmin({ $from, id, to, $type }: {
         "type": $type
     }))}`, {
         ...opts
+    }));
+}
+/**
+ * Retrieve linked OAuth accounts of a user
+ */
+export function getUserOAuthIdentitiesAdmin({ id }: {
+    id: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserOAuthIdentityListResponseDto;
+    }>(`/admin/users/${encodeURIComponent(id)}/oauth-identities`, {
+        ...opts
+    }));
+}
+/**
+ * Invite an OAuth account to a user
+ */
+export function inviteUserOAuthIdentityAdmin({ id, userOAuthIdentityInviteDto }: {
+    id: string;
+    userOAuthIdentityInviteDto: UserOAuthIdentityInviteDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 201;
+        data: UserOAuthIdentityResponseDto;
+    }>(`/admin/users/${encodeURIComponent(id)}/oauth-identities`, oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: userOAuthIdentityInviteDto
+    })));
+}
+/**
+ * Remove a linked OAuth account from a user
+ */
+export function removeUserOAuthIdentityAdmin({ id, identityId }: {
+    id: string;
+    identityId: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchText(`/admin/users/${encodeURIComponent(id)}/oauth-identities/${encodeURIComponent(identityId)}`, {
+        ...opts,
+        method: "DELETE"
+    }));
+}
+/**
+ * Change the owner OAuth account of a user
+ */
+export function transferUserOAuthIdentityAdmin({ id, identityId }: {
+    id: string;
+    identityId: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserOAuthIdentityResponseDto;
+    }>(`/admin/users/${encodeURIComponent(id)}/oauth-identities/${encodeURIComponent(identityId)}/owner`, {
+        ...opts,
+        method: "PUT"
     }));
 }
 /**
@@ -7692,6 +7782,57 @@ export function setUserLicense({ licenseKeyDto }: {
     })));
 }
 /**
+ * Retrieve linked OAuth accounts
+ */
+export function getMyOAuthIdentities(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserOAuthIdentityListResponseDto;
+    }>("/users/me/oauth-identities", {
+        ...opts
+    }));
+}
+/**
+ * Invite an OAuth account
+ */
+export function inviteMyOAuthIdentity({ userOAuthIdentityInviteDto }: {
+    userOAuthIdentityInviteDto: UserOAuthIdentityInviteDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 201;
+        data: UserOAuthIdentityResponseDto;
+    }>("/users/me/oauth-identities", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: userOAuthIdentityInviteDto
+    })));
+}
+/**
+ * Remove a linked OAuth account
+ */
+export function removeMyOAuthIdentity({ id }: {
+    id: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchText(`/users/me/oauth-identities/${encodeURIComponent(id)}`, {
+        ...opts,
+        method: "DELETE"
+    }));
+}
+/**
+ * Change the owner OAuth account
+ */
+export function transferMyOAuthIdentity({ id }: {
+    id: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: UserOAuthIdentityResponseDto;
+    }>(`/users/me/oauth-identities/${encodeURIComponent(id)}/owner`, {
+        ...opts,
+        method: "PUT"
+    }));
+}
+/**
  * Delete user onboarding
  */
 export function deleteUserOnboarding(opts?: Oazapfts.RequestOpts) {
@@ -8089,6 +8230,15 @@ export enum CalendarHeatmapType {
     Upload = "Upload",
     Taken = "Taken"
 }
+export enum UserOAuthIdentityRole {
+    Owner = "owner",
+    Member = "member"
+}
+export enum UserOAuthIdentityStatus {
+    Active = "active",
+    Pending = "pending",
+    Expired = "expired"
+}
 export enum AssetOrder {
     Asc = "asc",
     Desc = "desc"
@@ -8394,6 +8544,9 @@ export enum MemorySearchOrder {
 export enum MemoryType {
     OnThisDay = "on_this_day",
     Birthday = "birthday"
+}
+export enum OAuthPrompt {
+    SelectAccount = "select_account"
 }
 export enum PartnerDirection {
     SharedBy = "shared-by",

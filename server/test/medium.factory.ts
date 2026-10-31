@@ -64,6 +64,7 @@ import { SyncRepository } from 'src/repositories/sync.repository.js';
 import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository.js';
 import { TagRepository } from 'src/repositories/tag.repository.js';
 import { TelemetryRepository } from 'src/repositories/telemetry.repository.js';
+import { UserOAuthIdentityRepository } from 'src/repositories/user-oauth-identity.repository.js';
 import { UserRepository } from 'src/repositories/user.repository.js';
 import { VersionHistoryRepository } from 'src/repositories/version-history.repository.js';
 import { WebsocketRepository } from 'src/repositories/websocket.repository.js';
@@ -505,6 +506,7 @@ const newRealRepository = <T extends BaseServiceDeps[number]>(key: T, db: Kysely
     case SyncRepository:
     case SyncCheckpointRepository:
     case SystemMetadataRepository:
+    case UserOAuthIdentityRepository:
     case UserRepository:
     case VersionHistoryRepository:
     case WorkflowRepository: {
@@ -570,6 +572,7 @@ const newMockRepository = <T>(key: ClassConstructor<T>) => {
     case SyncRepository:
     case SyncCheckpointRepository:
     case SystemMetadataRepository:
+    case UserOAuthIdentityRepository:
     case UserRepository:
     case VersionHistoryRepository:
     case TagRepository:

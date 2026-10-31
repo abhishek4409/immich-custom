@@ -99,3 +99,5 @@
 1790616293884-PersonSharing
 1790693088454-AddPersonUserTableSharedBySharedWithConstraint
 1792213725597-AddAssetFaceAssetState
+1793414061000-AddUserOAuthIdentity
+1793421772000-AddUserOAuthIdentityUpdateId

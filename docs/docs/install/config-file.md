@@ -202,6 +202,7 @@ The default configuration looks like this:
     "mobileRedirectUri": "",
     "profileSigningAlgorithm": "none",
     "roleClaim": "immich_role",
+    "allowAccountSharing": false,
     "scope": "openid email profile",
     "signingAlgorithm": "RS256",
     "storageLabelClaim": "preferred_username",

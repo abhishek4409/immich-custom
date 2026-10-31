@@ -75,6 +75,7 @@ Once you have a new OAuth client application configured, Immich can be configure
 | Storage Quota Claim                                  | string  | immich_quota         | Claim mapping for the user's storage**¹**                                           |
 | Default Storage Quota (GiB)                          | number  | 0                    | Default quota for user without storage quota claim (empty for unlimited quota)      |
 | Button Text                                          | string  | Login with OAuth     | Text for the OAuth button on the web                                                |
+| [Allow Account Sharing](#sharing-a-user-between-oauth-accounts) | boolean | false | When true, more than one OAuth account can log in to the same user |
 | Auto Register                                        | boolean | true                 | When true, will automatically register a user the first time they sign in           |
 | [Auto Launch](#auto-launch)                          | boolean | false                | When true, will skip the login page and automatically start the OAuth login process |
 | [Mobile Redirect URI Override](#mobile-redirect-uri) | URL     | (empty)              | Http(s) alternative mobile redirect URI                                             |
@@ -102,6 +103,31 @@ The `.well-known/openid-configuration` part of the url is optional and will be a
 
 When Auto Launch is enabled, the login page will automatically redirect the user to the OAuth authorization url, to login with OAuth. To access the login screen again, use the browser's back button, or navigate directly to `/auth/login?autoLaunch=0`.
 Auto Launch can also be enabled on a per-request basis by navigating to `/auth/login?autoLaunch=1`, this can be useful in situations where Immich is called from e.g. Nextcloud using the _External sites_ app and the _oidc_ app so as to enable users to directly interact with a logged-in instance of Immich.
+
+## Sharing a user between OAuth accounts
+
+By default a user has one linked OAuth account. With **Allow Account Sharing** enabled, several OAuth accounts can log in to the same user and share its entire library. An OAuth account can still only be linked to one user.
+
+The first linked account is the **owner**. Other accounts are **members**: they have full access to the library, but cannot invite or remove accounts, change the password or change the email. Logging in with the user's password has the same rights as the owner. Claims (role, quota, storage label) and the profile picture are only synchronized from the owner.
+
+Manage linked accounts in **User Settings > Linked OAuth accounts**, or as an admin in **Administration > Users > (user)**.
+
+- **Invite by email:** enter an email and that person signs in with OAuth using it. Invites last 7 days and no email is sent, so tell them yourself. The provider must report the email as verified.
+- **Add in this browser:** the person chooses their account at the provider in your browser.
+- **Remove:** logs the account out on all devices and deletes the API keys it created. Shared links it created keep working.
+- **Make owner:** the owner must do this before removing themselves if other accounts exist.
+
+A login is resolved in this order: an already linked account, a user with the same email, an open invite, then Auto Register.
+
+:::danger
+Everyone linked to an admin user is an admin of the server.
+
+Anyone who can invite can claim the email of a person who has no user on this server yet, and that person's first login lands in the inviter's library. Only enable sharing if you trust the users on your server.
+:::
+
+:::note
+The locked folder's PIN code is shared by the whole user, and only people who know it can open the folder. If your provider is Google, a client in "Testing" mode only allows listed test users and an "Internal" client only allows your organization.
+:::
 
 ## Mobile Redirect URI
 

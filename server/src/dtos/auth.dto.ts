@@ -115,6 +115,11 @@ const OAuthConfigSchema = z
     redirectUri: z.string().describe('OAuth redirect URI'),
     state: z.string().optional().describe('OAuth state parameter'),
     codeChallenge: z.string().optional().describe('OAuth code challenge (PKCE)'),
+    prompt: z
+      .enum(['select_account'])
+      .meta({ id: 'OAuthPrompt' })
+      .optional()
+      .describe('Override the configured OAuth prompt, used to pick a different account when linking'),
   })
   .meta({ id: 'OAuthConfigDto' });
 

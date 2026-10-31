@@ -1,6 +1,11 @@
-import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserAdmin } from 'src/database.js';
-import { CacheControl, JobName, UserMetadataKey } from 'src/enum.js';
+import { CacheControl, JobName, UserMetadataKey, UserOAuthIdentityRole } from 'src/enum.js';
 import { UserService } from 'src/services/user.service.js';
 import { ImmichFileResponse } from 'src/utils/file.js';
 import { AuthFactory } from 'test/factories/auth.factory.js';
@@ -9,6 +14,8 @@ import { authStub } from 'test/fixtures/auth.stub.js';
 import { systemConfigStub } from 'test/fixtures/system-config.stub.js';
 import { userStub } from 'test/fixtures/user.stub.js';
 import { ServiceMocks, newTestService } from 'test/utils.js';
+
+const member = () => AuthFactory.from().session({ oauthRole: UserOAuthIdentityRole.Member }).build();
 
 const makeDeletedAt = (daysAgo: number) => {
   const deletedAt = new Date();
@@ -91,6 +98,28 @@ describe(UserService.name, () => {
         id: user.id,
         email: user.email,
       });
+    });
+  });
+
+  describe('updateMe', () => {
+    it('should not let a member set a password', async () => {
+      await expect(sut.updateMe(member(), { password: 'new-password' })).rejects.toBeInstanceOf(ForbiddenException);
+      expect(mocks.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should not let a member change the email', async () => {
+      await expect(sut.updateMe(member(), { email: 'other@immich.cloud' })).rejects.toBeInstanceOf(ForbiddenException);
+      expect(mocks.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should let a member change the name and send the current email', async () => {
+      const auth = member();
+
+      mocks.user.update.mockResolvedValue(UserFactory.create({ id: auth.user.id }));
+
+      await sut.updateMe(auth, { email: auth.user.email, name: 'New name' });
+
+      expect(mocks.user.update).toHaveBeenCalledWith(auth.user.id, expect.objectContaining({ name: 'New name' }));
     });
   });
 

@@ -24,6 +24,18 @@ describe('SessionService', () => {
     });
   });
 
+  describe('create', () => {
+    it('should keep the linked account of the parent session', async () => {
+      const auth = AuthFactory.from().session({ oauthIdentityId: 'identity-id' }).build();
+
+      mocks.session.create.mockResolvedValue(SessionFactory.create());
+
+      await sut.create(auth, { deviceType: 'tv', deviceOS: 'cast' });
+
+      expect(mocks.session.create).toHaveBeenCalledWith(expect.objectContaining({ oauthIdentityId: 'identity-id' }));
+    });
+  });
+
   describe('getAll', () => {
     it('should get the devices', async () => {
       const currentSession = SessionFactory.create();

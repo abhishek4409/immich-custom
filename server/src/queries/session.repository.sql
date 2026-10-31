@@ -25,6 +25,15 @@ select
   "session"."updatedAt",
   "session"."pinExpiresAt",
   "session"."appVersion",
+  "session"."oauthIdentityId",
+  (
+    select
+      "user_oauth_identity"."role"
+    from
+      "user_oauth_identity"
+    where
+      "user_oauth_identity"."id" = "session"."oauthIdentityId"
+  ) as "oauthRole",
   (
     select
       to_json(obj)

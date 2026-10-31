@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { Permission } from 'src/enum.js';
+import { Permission, UserOAuthIdentityRole } from 'src/enum.js';
 import { ApiKeyService } from 'src/services/api-key.service.js';
 import { ApiKeyFactory } from 'test/factories/api-key.factory.js';
 import { AuthFactory } from 'test/factories/auth.factory.js';
@@ -13,6 +13,41 @@ describe(ApiKeyService.name, () => {
 
   beforeEach(() => {
     ({ sut, mocks } = newTestService(ApiKeyService));
+  });
+
+  describe('linked accounts', () => {
+    it('should record the linked account that created the key', async () => {
+      const auth = AuthFactory.from().session({ oauthIdentityId: 'identity-id' }).build();
+      const apiKey = ApiKeyFactory.create({ userId: auth.user.id });
+
+      mocks.crypto.randomBytesAsText.mockReturnValue('secret');
+      mocks.crypto.hashSha256.mockReturnValue(Buffer.from('hash'));
+      mocks.apiKey.create.mockResolvedValue(apiKey);
+
+      await sut.create(auth, { name: 'key', permissions: [Permission.All] });
+
+      expect(mocks.apiKey.create).toHaveBeenCalledWith(expect.objectContaining({ oauthIdentityId: 'identity-id' }));
+    });
+
+    it('should move a rotated key to the member who holds the new secret', async () => {
+      const auth = AuthFactory.from()
+        .session({ oauthIdentityId: 'member-id', oauthRole: UserOAuthIdentityRole.Member })
+        .build();
+      const apiKey = ApiKeyFactory.create({ userId: auth.user.id });
+
+      mocks.crypto.randomBytesAsText.mockReturnValue('secret');
+      mocks.crypto.hashSha256.mockReturnValue(Buffer.from('hash'));
+      mocks.apiKey.getById.mockResolvedValue(apiKey);
+      mocks.apiKey.update.mockResolvedValue(apiKey);
+
+      await sut.rotate(auth, apiKey.id);
+
+      expect(mocks.apiKey.update).toHaveBeenCalledWith(
+        auth.user.id,
+        apiKey.id,
+        expect.objectContaining({ oauthIdentityId: 'member-id' }),
+      );
+    });
   });
 
   describe('create', () => {

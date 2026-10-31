@@ -6,6 +6,8 @@
   import ServerStatisticsCard from '$lib/components/server-statistics/ServerStatisticsCard.svelte';
   import UserAvatar from '$lib/components/shared-components/UserAvatar.svelte';
   import DeviceCard from '$lib/components/user-settings-page/DeviceCard.svelte';
+  import LinkedOAuthAccounts from '$lib/components/user-settings-page/LinkedOAuthAccounts.svelte';
+  import { featureFlagsManager } from '$lib/managers/feature-flags-manager.svelte';
   import FeatureSetting from './FeatureSetting.svelte';
   import { Route } from '$lib/route';
   import { getUserAdminActions } from '$lib/services/user-admin.service';
@@ -29,6 +31,7 @@
     Text,
   } from '@immich/ui';
   import {
+    mdiAccountMultipleOutline,
     mdiAccountOutline,
     mdiCameraIris,
     mdiChartPie,
@@ -212,6 +215,12 @@
             {/each}
           </Stack>
         </AdminCard>
+
+        {#if featureFlagsManager.value.oauth && !user.deletedAt}
+          <AdminCard icon={mdiAccountMultipleOutline} title={$t('linked_oauth_accounts')}>
+            <LinkedOAuthAccounts userId={user.id} isAdmin={user.isAdmin} />
+          </AdminCard>
+        {/if}
 
         <div class="col-span-full px-4 py-2">
           <div class="flex gap-2 text-primary">

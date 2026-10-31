@@ -168,6 +168,7 @@ const updatedConfig = Object.freeze<SystemConfig>({
     mobileRedirectUri: '',
     prompt: '',
     scope: 'openid email profile',
+    allowAccountSharing: false,
     signingAlgorithm: 'RS256',
     profileSigningAlgorithm: 'none',
     tokenEndpointAuthMethod: OAuthTokenEndpointAuthMethod.ClientSecretPost,

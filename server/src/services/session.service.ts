@@ -41,6 +41,7 @@ export class SessionService extends BaseService {
       deviceType: dto.deviceType,
       deviceOS: dto.deviceOS,
       token: hashed,
+      oauthIdentityId: auth.session.oauthIdentityId,
     });
 
     return { ...mapSession(session), token };

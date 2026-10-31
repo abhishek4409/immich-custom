@@ -40,6 +40,10 @@ import { TagController } from 'src/controllers/tag.controller.js';
 import { TimelineController } from 'src/controllers/timeline.controller.js';
 import { TrashController } from 'src/controllers/trash.controller.js';
 import { UserAdminController } from 'src/controllers/user-admin.controller.js';
+import {
+  UserOAuthIdentityAdminController,
+  UserOAuthIdentityController,
+} from 'src/controllers/user-oauth-identity.controller.js';
 import { UserController } from 'src/controllers/user.controller.js';
 import { VideoStreamController } from 'src/controllers/video-stream.controller.js';
 import { ViewController } from 'src/controllers/view.controller.js';
@@ -89,6 +93,8 @@ export const controllers = [
   TrashController,
   UserAdminController,
   UserController,
+  UserOAuthIdentityAdminController,
+  UserOAuthIdentityController,
   VideoStreamController,
   ViewController,
   WorkflowController,
