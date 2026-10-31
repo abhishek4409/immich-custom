@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import GoogleSignInButton from '$lib/components/GoogleSignInButton.svelte';
   import AuthPageLayout from '$lib/components/layouts/AuthPageLayout.svelte';
   import { eventManager } from '$lib/managers/event-manager.svelte';
   import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
@@ -27,6 +28,7 @@
 
   const serverConfig = $derived(serverConfigManager.value);
   const publicConfig = $derived(data.publicConfig);
+  const isGoogleOAuth = $derived(/\bgoogle\b/i.test(publicConfig.oauth.buttonText));
 
   const onSuccess = async (user: LoginResponseDto) => {
     await goto(data.continueUrl, { invalidateAll: true });
@@ -167,17 +169,25 @@
       {#if oauthError}
         <Alert color="danger" title={oauthError} closable />
       {/if}
-      <Button
-        shape="round"
-        loading={loading || oauthLoading}
-        disabled={loading || oauthLoading}
-        size="large"
-        fullWidth
-        color={publicConfig.passwordLogin.enabled ? 'secondary' : 'primary'}
-        onclick={handleOAuthLogin}
-      >
-        {publicConfig.oauth.buttonText}
-      </Button>
+      {#if isGoogleOAuth}
+        <GoogleSignInButton
+          text={publicConfig.oauth.buttonText}
+          loading={loading || oauthLoading}
+          onclick={handleOAuthLogin}
+        />
+      {:else}
+        <Button
+          shape="round"
+          loading={loading || oauthLoading}
+          disabled={loading || oauthLoading}
+          size="large"
+          fullWidth
+          color={publicConfig.passwordLogin.enabled ? 'secondary' : 'primary'}
+          onclick={handleOAuthLogin}
+        >
+          {publicConfig.oauth.buttonText}
+        </Button>
+      {/if}
     {/if}
 
     {#if !publicConfig.passwordLogin.enabled && !publicConfig.oauth.enabled}
