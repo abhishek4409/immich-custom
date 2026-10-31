@@ -23,11 +23,20 @@ import {
 } from 'src/dtos/auth.dto.js';
 import { SystemConfig, defaults } from 'src/dtos/config.dto.js';
 import { UserAdminResponseDto, mapUserAdmin } from 'src/dtos/user.dto.js';
-import { AuthType, ImmichCookie, ImmichHeader, ImmichQuery, JobName, Permission } from 'src/enum.js';
+import {
+  AuthType,
+  ImmichCookie,
+  ImmichHeader,
+  ImmichQuery,
+  JobName,
+  Permission,
+  UserOAuthIdentityRole,
+} from 'src/enum.js';
 import { OAuthProfile } from 'src/repositories/oauth.repository.js';
 import { BaseService } from 'src/services/base.service.js';
-import { isGranted } from 'src/utils/access.js';
+import { isGranted, isOAuthMember } from 'src/utils/access.js';
 import { HumanReadableSize } from 'src/utils/bytes.js';
+import { findOrFail } from 'src/utils/misc.js';
 import { generateProfileImage } from 'src/utils/profile-image.js';
 import { getUserAgentDetails } from 'src/utils/request.js';
 
@@ -135,6 +144,10 @@ export class AuthService extends BaseService {
   }
 
   async changePassword(auth: AuthDto, dto: ChangePasswordDto): Promise<UserAdminResponseDto> {
+    if (isOAuthMember(auth)) {
+      throw new ForbiddenException('Only the account owner can change the password');
+    }
+
     const { password, newPassword } = dto;
     const user = await this.userRepository.getForChangePassword(auth.user.id);
     const isValid = this.validateSecret(password, user.password);
@@ -288,7 +301,7 @@ export class AuthService extends BaseService {
     }
 
     return await this.oauthRepository.authorize(
-      oauth,
+      { ...oauth, prompt: dto.prompt ?? oauth.prompt },
       this.resolveRedirectUri(oauth, dto.redirectUri),
       dto.state,
       dto.codeChallenge,
@@ -318,23 +331,56 @@ export class AuthService extends BaseService {
       idToken: oauthBearerToken,
     } = await this.oauthRepository.getProfileAndOAuthSid(oauth, url, expectedState, codeVerifier);
     const normalizedEmail = profile.email ? profile.email.trim().toLowerCase() : undefined;
-    const { autoRegister, roleClaim } = oauth;
+    const { autoRegister, roleClaim, allowAccountSharing } = oauth;
     this.logger.debug(`Logging in with OAuth: ${JSON.stringify(profile)}`);
-    let user: UserAdmin | undefined = await this.userRepository.getByOAuthId(profile.sub);
+    const profileName = this.getProfileName(profile);
+    let identity = await this.userOAuthIdentityRepository.getBySub(profile.sub);
+    let user: UserAdmin | undefined = identity && (await this.userRepository.get(identity.userId, {}));
+
+    if (identity && user) {
+      await this.userOAuthIdentityRepository.update(identity.id, {
+        email: normalizedEmail ?? identity.email,
+        name: profileName ?? identity.name,
+        lastLoginAt: new Date(),
+      });
+    }
 
     // link by email
     if (!user && normalizedEmail) {
       const emailUser = await this.userRepository.getByEmail(normalizedEmail);
       if (emailUser) {
-        if (emailUser.oauthId) {
+        const identities = await this.userOAuthIdentityRepository.getByUserId(emailUser.id);
+        if (identities.some(({ sub }) => sub)) {
           this.logger.debug('OAuth login conflict: email already linked to different account');
           throw new BadRequestException('OAuth authentication failed');
         }
-        user = await this.userRepository.update(emailUser.id, { oauthId: profile.sub });
+        identity = await this.userOAuthIdentityRepository.bind({
+          userId: emailUser.id,
+          role: UserOAuthIdentityRole.Owner,
+          sub: profile.sub,
+          email: normalizedEmail,
+          name: profileName,
+          lastLoginAt: new Date(),
+        });
+        user = { ...emailUser, oauthId: profile.sub };
       }
     }
 
-    const role = this.getRoleClaim(profile, roleClaim);
+    // accept an invite
+    if (!user && normalizedEmail && allowAccountSharing && profile.email_verified === true) {
+      const invite = await this.userOAuthIdentityRepository.getOpenInvite(normalizedEmail);
+      if (invite) {
+        identity = await this.userOAuthIdentityRepository.redeemInvite(invite.id, {
+          sub: profile.sub,
+          name: profileName,
+        });
+        user = identity && (await this.userRepository.get(identity.userId, {}));
+      }
+    }
+
+    // the account's role, claims and picture follow its owner, not whoever logged in last
+    const isMember = identity?.role === UserOAuthIdentityRole.Member;
+    const role = isMember ? undefined : this.getRoleClaim(profile, roleClaim);
     const isAdmin = role === 'admin';
 
     if (user && role && isAdmin !== user.isAdmin) {
@@ -343,7 +389,9 @@ export class AuthService extends BaseService {
 
     // register new user
     if (user) {
-      user = await this.syncOAuthClaims(user, profile, oauth);
+      if (!isMember) {
+        user = await this.syncOAuthClaims(user, profile, oauth);
+      }
     } else {
       if (!autoRegister) {
         this.logger.warn(
@@ -361,24 +409,38 @@ export class AuthService extends BaseService {
       const claims = this.parseOAuthClaims(profile, oauth, true);
 
       user = await this.createUser({
-        name:
-          profile.name ||
-          `${profile.given_name || ''} ${profile.family_name || ''}`.trim() ||
-          profile.preferred_username ||
-          normalizedEmail,
+        name: profileName || normalizedEmail,
         email: normalizedEmail,
         oauthId: profile.sub,
         quotaSizeInBytes: claims.quotaSizeInBytes ?? null,
         storageLabel: claims.storageLabel ?? null,
         isAdmin,
       });
+
+      identity = await this.userOAuthIdentityRepository.bind({
+        userId: user.id,
+        role: UserOAuthIdentityRole.Owner,
+        sub: profile.sub,
+        email: normalizedEmail,
+        name: profileName,
+        lastLoginAt: new Date(),
+      });
     }
 
-    if (!user.profileImagePath && profile.picture) {
+    if (!isMember && !user.profileImagePath && profile.picture) {
       await this.syncProfilePicture(user, profile.picture);
     }
 
-    return this.createLoginResponse(user, loginDetails, oauthSid, oauthBearerToken);
+    return this.createLoginResponse(user, loginDetails, oauthSid, oauthBearerToken, identity?.id);
+  }
+
+  private getProfileName(profile: OAuthProfile) {
+    return (
+      profile.name ||
+      `${profile.given_name || ''} ${profile.family_name || ''}`.trim() ||
+      profile.preferred_username ||
+      null
+    );
   }
 
   private async syncProfilePicture(user: UserAdmin, url: string) {
@@ -405,6 +467,10 @@ export class AuthService extends BaseService {
   }
 
   async link(auth: AuthDto, dto: OAuthCallbackDto, headers: IncomingHttpHeaders): Promise<UserAdminResponseDto> {
+    if (isOAuthMember(auth)) {
+      throw new ForbiddenException('Only the account owner can link another account');
+    }
+
     const expectedState = dto.state ?? this.getCookieOauthState(headers);
     if (!expectedState?.length) {
       throw new BadRequestException('OAuth state is missing');
@@ -416,35 +482,80 @@ export class AuthService extends BaseService {
     }
 
     const { oauth } = await this.getConfig({ withCache: false });
-    const {
-      profile: { sub: oauthId },
-      sid,
-      idToken,
-    } = await this.oauthRepository.getProfileAndOAuthSid(oauth, dto.url, expectedState, codeVerifier);
-    const duplicate = await this.userRepository.getByOAuthId(oauthId);
-    if (duplicate && duplicate.id !== auth.user.id) {
-      this.logger.warn(`OAuth link account failed: sub is already linked to another user (${duplicate.email}).`);
+    const { profile, sid, idToken } = await this.oauthRepository.getProfileAndOAuthSid(
+      oauth,
+      dto.url,
+      expectedState,
+      codeVerifier,
+    );
+    const duplicate = await this.userOAuthIdentityRepository.getBySub(profile.sub);
+    if (duplicate && duplicate.userId !== auth.user.id) {
+      this.logger.warn(`OAuth link account failed: sub is already linked to another user (${duplicate.userId}).`);
       throw new BadRequestException('This OAuth account has already been linked to another user.');
     }
 
-    if (auth.session && (sid || idToken)) {
-      await this.sessionRepository.update(auth.session.id, {
-        oauthSid: sid,
-        oauthBearerToken: idToken,
+    if (!duplicate) {
+      const identities = await this.userOAuthIdentityRepository.getByUserId(auth.user.id);
+      if (identities.some(({ sub }) => sub) && !oauth.allowAccountSharing) {
+        throw new BadRequestException('OAuth account sharing is not enabled');
+      }
+
+      const hasOwner = identities.some(({ role }) => role === UserOAuthIdentityRole.Owner);
+      const identity = await this.userOAuthIdentityRepository.bind({
+        userId: auth.user.id,
+        role: hasOwner ? UserOAuthIdentityRole.Member : UserOAuthIdentityRole.Owner,
+        sub: profile.sub,
+        email: profile.email?.trim().toLowerCase() ?? '',
+        name: this.getProfileName(profile),
       });
+
+      // adding someone else from this browser does not change who this session belongs to
+      if (auth.session && !hasOwner) {
+        await this.sessionRepository.update(auth.session.id, {
+          oauthIdentityId: identity.id,
+          oauthSid: sid,
+          oauthBearerToken: idToken,
+        });
+      }
     }
 
-    const user = await this.userRepository.update(auth.user.id, { oauthId });
-    return mapUserAdmin(user);
+    return this.getUserAdmin(auth.user.id);
   }
 
   async unlink(auth: AuthDto): Promise<UserAdminResponseDto> {
+    if (isOAuthMember(auth)) {
+      throw new ForbiddenException('Only the account owner can unlink an account');
+    }
+
+    const identities = await this.userOAuthIdentityRepository.getByUserId(auth.user.id);
+    if (identities.length > 1) {
+      throw new BadRequestException('This user has more than one linked account, remove them individually');
+    }
+
+    const [identity] = identities;
+    if (identity) {
+      if (identity.role === UserOAuthIdentityRole.Owner) {
+        const { password } = await this.userRepository.getForPinCode(auth.user.id);
+        if (!password) {
+          throw new BadRequestException('Set a password before unlinking the only way to log in');
+        }
+      }
+
+      const sessionIds = await this.userOAuthIdentityRepository.remove(identity.id);
+      for (const sessionId of sessionIds) {
+        await this.eventRepository.emit('SessionDelete', { sessionId });
+      }
+    }
+
     if (auth.session) {
       await this.sessionRepository.update(auth.session.id, { oauthSid: null, oauthBearerToken: null });
     }
 
-    const user = await this.userRepository.update(auth.user.id, { oauthId: null });
-    return mapUserAdmin(user);
+    return this.getUserAdmin(auth.user.id);
+  }
+
+  private async getUserAdmin(id: string) {
+    return mapUserAdmin(await findOrFail(() => this.userRepository.get(id, {}), 'User'));
   }
 
   private async getLogoutEndpoint(authType: AuthType, oauthBearerToken?: string | null): Promise<string> {
@@ -584,6 +695,8 @@ export class AuthService extends BaseService {
         session: {
           id: session.id,
           hasElevatedPermission,
+          oauthIdentityId: session.oauthIdentityId,
+          oauthRole: session.oauthRole,
         },
       };
     }
@@ -617,6 +730,7 @@ export class AuthService extends BaseService {
     loginDetails: LoginDetails,
     oauthSid?: string,
     oauthBearerToken?: string,
+    oauthIdentityId?: string,
   ) {
     const token = this.cryptoRepository.randomBytesAsText(32);
     const hashed = this.cryptoRepository.hashSha256(token);
@@ -629,6 +743,7 @@ export class AuthService extends BaseService {
       userId: user.id,
       oauthSid: oauthSid ?? null,
       oauthBearerToken: oauthBearerToken ?? null,
+      oauthIdentityId: oauthIdentityId ?? null,
     });
 
     return mapLoginResponse(user, token);

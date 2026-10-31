@@ -23,6 +23,15 @@ export const systemConfigStub = {
       buttonText: 'OAuth',
     },
   },
+  oauthAccountSharing: {
+    oauth: {
+      enabled: true,
+      autoRegister: false,
+      autoLaunch: false,
+      buttonText: 'OAuth',
+      allowAccountSharing: true,
+    },
+  },
   oauthWithAutoRegister: {
     oauth: {
       enabled: true,

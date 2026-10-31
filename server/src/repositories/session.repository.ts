@@ -51,6 +51,11 @@ export class SessionRepository {
       .selectFrom('session')
       .select((eb) => [
         ...columns.authSession,
+        eb
+          .selectFrom('user_oauth_identity')
+          .select('user_oauth_identity.role')
+          .whereRef('user_oauth_identity.id', '=', 'session.oauthIdentityId')
+          .as('oauthRole'),
         jsonObjectFrom(
           eb
             .selectFrom('user')
@@ -114,12 +119,15 @@ export class SessionRepository {
 
     if (oauthSid && oauthId) {
       query = query
-        .using('user')
-        .whereRef('user.id', '=', 'session.userId')
+        .using('user_oauth_identity')
+        .whereRef('user_oauth_identity.id', '=', 'session.oauthIdentityId')
         .where('session.oauthSid', '=', oauthSid)
-        .where('user.oauthId', '=', oauthId);
+        .where('user_oauth_identity.sub', '=', oauthId);
     } else if (!oauthSid && oauthId) {
-      query = query.using('user').whereRef('user.id', '=', 'session.userId').where('user.oauthId', '=', oauthId);
+      query = query
+        .using('user_oauth_identity')
+        .whereRef('user_oauth_identity.id', '=', 'session.oauthIdentityId')
+        .where('user_oauth_identity.sub', '=', oauthId);
     } else if (oauthSid && !oauthId) {
       query = query.where('session.oauthSid', '=', oauthSid);
     } else {

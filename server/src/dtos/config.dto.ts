@@ -302,6 +302,7 @@ const AdminConfigSchemaWithVisibility = z
         storageLabelClaim: z.string().describe('Storage label claim'),
         storageQuotaClaim: z.string().describe('Storage quota claim'),
         roleClaim: z.string().describe('Role claim'),
+        allowAccountSharing: configBool.describe('Allow more than one OAuth account to log in to the same user'),
         mobileOverrideEnabled: configBool.describe('Mobile override enabled'),
         mobileRedirectUri: z.string().describe('Mobile redirect URI (set to empty string to disable)'),
       })
@@ -680,6 +681,7 @@ export const defaults = Object.freeze<SystemConfig>({
     storageLabelClaim: 'preferred_username',
     storageQuotaClaim: 'immich_quota',
     roleClaim: 'immich_role',
+    allowAccountSharing: false,
     tokenEndpointAuthMethod: OAuthTokenEndpointAuthMethod.ClientSecretPost,
     timeout: 30_000,
     allowInsecureRequests: false,

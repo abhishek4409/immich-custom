@@ -26,6 +26,7 @@ export class ApiKeyFactory {
       updatedAt: newDate(),
       updateId: newUuidV7(),
       userId,
+      oauthIdentityId: null,
       ...dto,
     }).user({ id: userId });
   }

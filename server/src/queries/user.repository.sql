@@ -186,46 +186,6 @@ where
   "user"."storageLabel" = $1
   and "user"."deletedAt" is null
 
--- UserRepository.getByOAuthId
-select
-  "id",
-  "name",
-  "email",
-  "avatarColor",
-  "profileImagePath",
-  "profileChangedAt",
-  "clusterGroupId",
-  "createdAt",
-  "updatedAt",
-  "deletedAt",
-  "isAdmin",
-  "status",
-  "oauthId",
-  "profileImagePath",
-  "shouldChangePassword",
-  "storageLabel",
-  "quotaSizeInBytes",
-  "quotaUsageInBytes",
-  (
-    select
-      coalesce(json_agg(agg), '[]')
-    from
-      (
-        select
-          "user_metadata"."key",
-          "user_metadata"."value"
-        from
-          "user_metadata"
-        where
-          "user"."id" = "user_metadata"."userId"
-      ) as agg
-  ) as "metadata"
-from
-  "user"
-where
-  "user"."oauthId" = $1
-  and "user"."deletedAt" is null
-
 -- UserRepository.getDeletedAfter
 select
   "id"

@@ -10,8 +10,8 @@ import {
   getPeopleThumbnailPath,
   getUserProfileImagePath,
   linkOAuthAccount,
+  OAuthPrompt,
   startOAuth,
-  unlinkOAuthAccount,
   type AssetResponseDto,
   type MemoryResponseDto,
   type PersonResponseDto,
@@ -345,11 +345,13 @@ export const oauth = {
     const value = 'autoLaunch=1';
     return location.search.includes(value);
   },
-  authorize: async (location: Location) => {
+  authorize: async (location: Location, { selectAccount }: { selectAccount?: boolean } = {}) => {
     const $t = get(t);
     try {
       const redirectUri = location.href.split('?', 1)[0];
-      const { url } = await startOAuth({ oAuthConfigDto: { redirectUri } });
+      const { url } = await startOAuth({
+        oAuthConfigDto: { redirectUri, prompt: selectAccount ? OAuthPrompt.SelectAccount : undefined },
+      });
       globalThis.location.assign(url);
       return true;
     } catch (error) {
@@ -362,9 +364,6 @@ export const oauth = {
   },
   link: (location: Location) => {
     return linkOAuthAccount({ oAuthCallbackDto: { url: location.href } });
-  },
-  unlink: () => {
-    return unlinkOAuthAccount();
   },
 };
 

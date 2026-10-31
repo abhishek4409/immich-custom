@@ -10,6 +10,7 @@ import {
 } from '@immich/sql-tools';
 import { UpdateIdColumn, UpdatedAtTrigger } from 'src/decorators.js';
 import { Permission } from 'src/enum.js';
+import { UserOAuthIdentityTable } from 'src/schema/tables/user-oauth-identity.table.js';
 import { UserTable } from 'src/schema/tables/user.table.js';
 
 @Table('api_key')
@@ -38,4 +39,7 @@ export class ApiKeyTable {
 
   @UpdateIdColumn({ index: true })
   updateId!: Generated<string>;
+
+  @ForeignKeyColumn(() => UserOAuthIdentityTable, { onUpdate: 'CASCADE', onDelete: 'CASCADE', nullable: true })
+  oauthIdentityId!: string | null;
 }

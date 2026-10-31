@@ -69,6 +69,7 @@ import { SystemMetadataRepository } from 'src/repositories/system-metadata.repos
 import { TagRepository } from 'src/repositories/tag.repository.js';
 import { TelemetryRepository } from 'src/repositories/telemetry.repository.js';
 import { TrashRepository } from 'src/repositories/trash.repository.js';
+import { UserOAuthIdentityRepository } from 'src/repositories/user-oauth-identity.repository.js';
 import { UserRepository } from 'src/repositories/user.repository.js';
 import { VersionHistoryRepository } from 'src/repositories/version-history.repository.js';
 import { VideoStreamRepository } from 'src/repositories/video-stream.repository.js';
@@ -287,6 +288,7 @@ export type ServiceOverrides = {
   telemetry: TelemetryRepository;
   trash: TrashRepository;
   user: UserRepository;
+  userOAuthIdentity: UserOAuthIdentityRepository;
   versionHistory: VersionHistoryRepository;
   videoStream: VideoStreamRepository;
   view: ViewRepository;
@@ -377,6 +379,7 @@ export const getMocks = () => {
     telemetry: newTelemetryRepositoryMock(),
     trash: automock(TrashRepository),
     user: automock(UserRepository, { strict: false }),
+    userOAuthIdentity: automock(UserOAuthIdentityRepository, { strict: false }),
     versionHistory: automock(VersionHistoryRepository),
     videoStream: automock(VideoStreamRepository, { strict: false }),
     view: automock(ViewRepository),
@@ -448,6 +451,7 @@ export const newTestService = <T extends BaseService>(
     overrides.tag || (mocks.tag as As<TagRepository>),
     overrides.telemetry || (mocks.telemetry as unknown as TelemetryRepository),
     overrides.trash || (mocks.trash as As<TrashRepository>),
+    overrides.userOAuthIdentity || (mocks.userOAuthIdentity as As<UserOAuthIdentityRepository>),
     overrides.user || (mocks.user as As<UserRepository>),
     overrides.versionHistory || (mocks.versionHistory as As<VersionHistoryRepository>),
     overrides.videoStream || (mocks.videoStream as As<VideoStreamRepository>),

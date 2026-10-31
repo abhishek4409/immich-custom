@@ -5,6 +5,9 @@ import { BaseService } from 'src/services/base.service.js';
 @Injectable()
 export class AuthAdminService extends BaseService {
   async unlinkAll(_auth: AuthDto) {
-    await this.userRepository.updateAll({ oauthId: null });
+    const sessionIds = await this.userOAuthIdentityRepository.removeAll();
+    for (const sessionId of sessionIds) {
+      await this.eventRepository.emit('SessionDelete', { sessionId });
+    }
   }
 }

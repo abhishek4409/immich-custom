@@ -435,6 +435,27 @@ export enum UserStatus {
 
 export const UserStatusSchema = z.enum(UserStatus).describe('User status').meta({ id: 'UserStatus' });
 
+export enum UserOAuthIdentityRole {
+  Owner = 'owner',
+  Member = 'member',
+}
+
+export const UserOAuthIdentityRoleSchema = z
+  .enum(UserOAuthIdentityRole)
+  .describe('Linked OAuth account role')
+  .meta({ id: 'UserOAuthIdentityRole' });
+
+export enum UserOAuthIdentityStatus {
+  Active = 'active',
+  Pending = 'pending',
+  Expired = 'expired',
+}
+
+export const UserOAuthIdentityStatusSchema = z
+  .enum(UserOAuthIdentityStatus)
+  .describe('Linked OAuth account status')
+  .meta({ id: 'UserOAuthIdentityStatus' });
+
 export enum AssetStatus {
   Active = 'active',
   Trashed = 'trashed',

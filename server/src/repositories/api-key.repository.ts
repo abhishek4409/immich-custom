@@ -36,6 +36,11 @@ export class ApiKeyRepository {
       .selectFrom('api_key')
       .select((eb) => [
         ...columns.authApiKey,
+        eb
+          .selectFrom('user_oauth_identity')
+          .select('user_oauth_identity.role')
+          .whereRef('user_oauth_identity.id', '=', 'api_key.oauthIdentityId')
+          .as('oauthRole'),
         jsonObjectFrom(
           eb
             .selectFrom('user')

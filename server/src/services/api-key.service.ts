@@ -4,7 +4,7 @@ import { ApiKeyCreateDto, ApiKeyCreateResponseDto, ApiKeyResponseDto, ApiKeyUpda
 import { AuthDto } from 'src/dtos/auth.dto.js';
 import { Permission } from 'src/enum.js';
 import { BaseService } from 'src/services/base.service.js';
-import { isGranted } from 'src/utils/access.js';
+import { isGranted, isOAuthMember } from 'src/utils/access.js';
 import { findOrFail } from 'src/utils/misc.js';
 
 @Injectable()
@@ -22,6 +22,7 @@ export class ApiKeyService extends BaseService {
       name: dto.name || 'API Key',
       userId: auth.user.id,
       permissions: dto.permissions,
+      oauthIdentityId: auth.session?.oauthIdentityId ?? auth.apiKey?.oauthIdentityId,
     });
     const apiKey = this.map(entity);
 
@@ -59,7 +60,11 @@ export class ApiKeyService extends BaseService {
 
     const token = this.cryptoRepository.randomBytesAsText(32);
     const hashed = this.cryptoRepository.hashSha256(token);
-    const newKey = await this.apiKeyRepository.update(auth.user.id, id, { key: hashed });
+    const newKey = await this.apiKeyRepository.update(auth.user.id, id, {
+      key: hashed,
+      // a member who holds the new secret must lose it when they are removed
+      ...(isOAuthMember(auth) && { oauthIdentityId: auth.session?.oauthIdentityId ?? auth.apiKey?.oauthIdentityId }),
+    });
     const apiKey = this.map(newKey);
 
     return { ...apiKey, secret: token, apiKey };
