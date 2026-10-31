@@ -36,10 +36,10 @@
   </picture>
 
   <div
-    class="flex w-full flex-col justify-center gap-4 rounded-t-3xl border-t border-white/60 bg-white/70 p-6 text-dark shadow-lg backdrop-blur-xl backdrop-saturate-150 md:my-6 md:me-[5vw] md:min-h-[86dvh] md:w-md md:gap-6 md:rounded-3xl md:border md:p-8 dark:border-white/15 dark:bg-black/60 dark:text-white"
+    class="flex w-full flex-col justify-center gap-3 rounded-t-3xl border-t border-white/60 bg-white/35 px-6 py-5 text-dark shadow-lg backdrop-blur-sm backdrop-saturate-150 [text-shadow:0_0_8px_rgb(255_255_255/0.9)] md:my-6 md:me-[5vw] md:min-h-[72dvh] md:w-md md:gap-4 md:rounded-3xl md:border md:p-8 dark:border-white/15 dark:bg-black/30 dark:text-white dark:[text-shadow:0_0_8px_rgb(0_0_0/0.9)] [&_button]:text-shadow-none [&_input]:text-shadow-none"
   >
     <VStack>
-      <Logo variant="icon" size="large" class="md:h-24" />
+      <Logo variant="icon" size="large" class="md:h-20" />
       <Heading size="large" class="font-semibold" color="primary" tag="h1">{title}</Heading>
     </VStack>
 

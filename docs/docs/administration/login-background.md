@@ -48,6 +48,7 @@ Browsers may keep showing the old photo for a while, so refresh the page without
 ## Choosing a photo
 
 - Keep the main subject in the upper left. The form covers the right side on large screens and the bottom on phones.
+- Avoid very dark areas behind the form in the light theme, and very bright ones in the dark theme. The form is see-through, so they make its text harder to read.
 - Aim for 300-800 KB per file, because the photo loads before anyone signs in.
 
 If a file is missing, the login page shows the default colorful background instead.

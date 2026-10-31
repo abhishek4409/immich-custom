@@ -129,7 +129,7 @@
 </script>
 
 <LoginPageLayout title={data.meta.title}>
-  <Stack gap={4}>
+  <Stack gap={3}>
     {#if publicConfig.server.loginPageMessage}
       <Alert color="primary" class="mb-6">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -138,7 +138,7 @@
     {/if}
 
     {#if !oauthLoading && publicConfig.passwordLogin.enabled}
-      <form {onsubmit} class="flex flex-col gap-4">
+      <form {onsubmit} class="flex flex-col gap-3">
         {#if errorMessage}
           <Alert color="danger" title={errorMessage} closable />
         {/if}
@@ -151,16 +151,16 @@
           <PasswordInput id="password" bind:value={password} autocomplete="current-password" />
         </Field>
 
-        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-6">{$t('to_login')}</Button>
+        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-3">{$t('to_login')}</Button>
       </form>
     {/if}
 
     {#if publicConfig.oauth.enabled}
       {#if publicConfig.passwordLogin.enabled}
-        <div class="my-2 flex w-full items-center gap-3">
-          <hr class="h-px flex-1 border-0 bg-black/20 dark:bg-white/30" />
+        <div class="flex w-full items-center gap-3">
+          <hr class="h-px flex-1 border-0 bg-black/30 dark:bg-white/40" />
           <span class="font-medium uppercase">{$t('or')}</span>
-          <hr class="h-px flex-1 border-0 bg-black/20 dark:bg-white/30" />
+          <hr class="h-px flex-1 border-0 bg-black/30 dark:bg-white/40" />
         </div>
       {/if}
       {#if oauthError}
