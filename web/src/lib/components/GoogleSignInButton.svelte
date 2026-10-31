@@ -19,10 +19,10 @@
   fullWidth
   {loading}
   {onclick}
-  class="gap-3 border border-[#747775] bg-white px-4 py-[9px] whitespace-nowrap text-[#1f1f1f] not-disabled:hover:bg-[#f2f2f2] dark:border-white/60 dark:bg-black/30 dark:text-[#e3e3e3] dark:not-disabled:hover:bg-white/10"
+  class="h-[46px] gap-2.5 border border-[#747775] bg-white px-4 py-0 text-[15px] whitespace-nowrap text-[#1f1f1f] not-disabled:hover:bg-[#f2f2f2] dark:border-white/60 dark:bg-black/30 dark:text-[#e3e3e3] dark:not-disabled:hover:bg-white/10"
 >
   {#if !loading}
-    <svg class="size-6 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
+    <svg class="size-5 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
       <path
         fill="#EA4335"
         d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"

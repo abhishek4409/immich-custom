@@ -29,6 +29,8 @@
   const serverConfig = $derived(serverConfigManager.value);
   const publicConfig = $derived(data.publicConfig);
   const isGoogleOAuth = $derived(/\bgoogle\b/i.test(publicConfig.oauth.buttonText));
+  const isOAuthOnly = $derived(publicConfig.oauth.enabled && !publicConfig.passwordLogin.enabled);
+  const buttonClass = 'h-[46px] py-0 text-[15px]';
 
   const onSuccess = async (user: LoginResponseDto) => {
     await goto(data.continueUrl, { invalidateAll: true });
@@ -128,8 +130,8 @@
   };
 </script>
 
-<LoginPageLayout title={data.meta.title}>
-  <Stack gap={3}>
+<LoginPageLayout title={$t('welcome_to_immich')} subtitle={isOAuthOnly ? $t('sign_in_to_continue') : undefined}>
+  <Stack gap={4}>
     {#if publicConfig.server.loginPageMessage}
       <Alert color="primary" class="mb-6">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -138,7 +140,11 @@
     {/if}
 
     {#if !oauthLoading && publicConfig.passwordLogin.enabled}
-      <form {onsubmit} class="flex flex-col gap-3">
+      <!-- Inputs stay at 16px on phones because iOS zooms the page when focusing smaller text -->
+      <form
+        {onsubmit}
+        class="flex flex-col gap-4 [&_input]:text-base md:[&_input]:text-sm [&_label]:text-[13px] [&_label]:text-inherit"
+      >
         {#if errorMessage}
           <Alert color="danger" title={errorMessage} closable />
         {/if}
@@ -151,15 +157,17 @@
           <PasswordInput id="password" bind:value={password} autocomplete="current-password" />
         </Field>
 
-        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-3">{$t('to_login')}</Button>
+        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-1 md:mt-2 {buttonClass}"
+          >{$t('to_login')}</Button
+        >
       </form>
     {/if}
 
     {#if publicConfig.oauth.enabled}
       {#if publicConfig.passwordLogin.enabled}
-        <div class="flex w-full items-center gap-3">
+        <div class="flex w-full items-center gap-3 md:my-1">
           <hr class="h-px flex-1 border-0 bg-black/30 dark:bg-white/40" />
-          <span class="font-medium uppercase">{$t('or')}</span>
+          <span class="text-xs font-medium tracking-wide uppercase">{$t('or')}</span>
           <hr class="h-px flex-1 border-0 bg-black/30 dark:bg-white/40" />
         </div>
       {/if}
@@ -179,6 +187,7 @@
           disabled={loading || oauthLoading}
           size="large"
           fullWidth
+          class={buttonClass}
           color={publicConfig.passwordLogin.enabled ? 'secondary' : 'primary'}
           onclick={handleOAuthLogin}
         >

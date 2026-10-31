@@ -13,6 +13,17 @@ describe('LoginPageLayout component', () => {
     );
   });
 
+  it('shows the subtitle only when one is given', () => {
+    const { getByText, queryByText, unmount } = render(LoginPageLayout, { title: 'Welcome', subtitle: 'Sign in' });
+
+    expect(getByText('Sign in')).toBeInTheDocument();
+    unmount();
+
+    render(LoginPageLayout, { title: 'Welcome' });
+
+    expect(queryByText('Sign in')).not.toBeInTheDocument();
+  });
+
   it('keeps the photo hidden until it loads', async () => {
     const { container } = render(LoginPageLayout, { title: 'Login' });
     const photo = getPhoto(container);
