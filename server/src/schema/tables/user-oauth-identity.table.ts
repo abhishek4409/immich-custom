@@ -9,7 +9,7 @@ import {
   Timestamp,
   UpdateDateColumn,
 } from '@immich/sql-tools';
-import { UpdatedAtTrigger } from 'src/decorators.js';
+import { UpdateIdColumn, UpdatedAtTrigger } from 'src/decorators.js';
 import { UserOAuthIdentityRole } from 'src/enum.js';
 import { UserTable } from 'src/schema/tables/user.table.js';
 
@@ -49,4 +49,7 @@ export class UserOAuthIdentityTable {
 
   @UpdateDateColumn()
   updatedAt!: Generated<Timestamp>;
+
+  @UpdateIdColumn({ index: true })
+  updateId!: Generated<string>;
 }
