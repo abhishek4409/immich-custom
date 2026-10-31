@@ -19,7 +19,7 @@
   fullWidth
   {loading}
   {onclick}
-  class="gap-3 border border-[#747775] bg-white py-[9px] text-[#1f1f1f] not-disabled:hover:bg-[#f2f2f2] dark:border-neutral-600 dark:bg-transparent dark:text-[#e3e3e3] dark:not-disabled:hover:bg-white/10"
+  class="gap-3 border border-[#747775] bg-white px-4 py-[9px] whitespace-nowrap text-[#1f1f1f] not-disabled:hover:bg-[#f2f2f2] dark:border-white/30 dark:bg-transparent dark:text-[#e3e3e3] dark:not-disabled:hover:bg-white/10"
 >
   {#if !loading}
     <svg class="size-6 shrink-0" viewBox="0 0 48 48" aria-hidden="true">

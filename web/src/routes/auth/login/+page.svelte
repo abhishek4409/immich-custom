@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import GoogleSignInButton from '$lib/components/GoogleSignInButton.svelte';
-  import AuthPageLayout from '$lib/components/layouts/AuthPageLayout.svelte';
+  import LoginPageLayout from '$lib/components/layouts/LoginPageLayout.svelte';
   import { eventManager } from '$lib/managers/event-manager.svelte';
   import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
   import { Route } from '$lib/route';
@@ -128,7 +128,7 @@
   };
 </script>
 
-<AuthPageLayout title={data.meta.title}>
+<LoginPageLayout title={data.meta.title}>
   <Stack gap={4}>
     {#if publicConfig.server.loginPageMessage}
       <Alert color="primary" class="mb-6">
@@ -157,13 +157,10 @@
 
     {#if publicConfig.oauth.enabled}
       {#if publicConfig.passwordLogin.enabled}
-        <div class="my-4 inline-flex w-full items-center justify-center">
-          <hr class="my-4 h-px w-3/4 border-0 bg-gray-200 dark:bg-gray-600" />
-          <span
-            class="absolute inset-s-1/2 -translate-x-1/2 bg-gray-50 px-3 font-medium text-gray-900 uppercase dark:bg-neutral-900 dark:text-white"
-          >
-            {$t('or')}
-          </span>
+        <div class="my-2 flex w-full items-center gap-3">
+          <hr class="h-px flex-1 border-0 bg-black/20 dark:bg-white/30" />
+          <span class="font-medium uppercase">{$t('or')}</span>
+          <hr class="h-px flex-1 border-0 bg-black/20 dark:bg-white/30" />
         </div>
       {/if}
       {#if oauthError}
@@ -194,4 +191,4 @@
       <Alert color="warning" title={$t('login_has_been_disabled')} />
     {/if}
   </Stack>
-</AuthPageLayout>
+</LoginPageLayout>
