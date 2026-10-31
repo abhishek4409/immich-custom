@@ -23,21 +23,12 @@ import {
 } from 'src/dtos/auth.dto.js';
 import { SystemConfig, defaults } from 'src/dtos/config.dto.js';
 import { UserAdminResponseDto, mapUserAdmin } from 'src/dtos/user.dto.js';
-import {
-  AuthType,
-  ImmichCookie,
-  ImmichHeader,
-  ImmichQuery,
-  JobName,
-  Permission,
-  UserOAuthIdentityRole,
-} from 'src/enum.js';
+import { AuthType, ImmichCookie, ImmichHeader, ImmichQuery, Permission, UserOAuthIdentityRole } from 'src/enum.js';
 import { OAuthProfile } from 'src/repositories/oauth.repository.js';
 import { BaseService } from 'src/services/base.service.js';
 import { isGranted, isOAuthMember } from 'src/utils/access.js';
 import { HumanReadableSize } from 'src/utils/bytes.js';
 import { findOrFail } from 'src/utils/misc.js';
-import { generateProfileImage } from 'src/utils/profile-image.js';
 import { getUserAgentDetails } from 'src/utils/request.js';
 
 export interface LoginDetails {
@@ -378,7 +369,7 @@ export class AuthService extends BaseService {
       }
     }
 
-    // the account's role, claims and picture follow its owner, not whoever logged in last
+    // the account's role and claims follow its owner, not whoever logged in last
     const isMember = identity?.role === UserOAuthIdentityRole.Member;
     const role = isMember ? undefined : this.getRoleClaim(profile, roleClaim);
     const isAdmin = role === 'admin';
@@ -427,10 +418,6 @@ export class AuthService extends BaseService {
       });
     }
 
-    if (!isMember && !user.profileImagePath && profile.picture) {
-      await this.syncProfilePicture(user, profile.picture);
-    }
-
     return this.createLoginResponse(user, loginDetails, oauthSid, oauthBearerToken, identity?.id);
   }
 
@@ -441,29 +428,6 @@ export class AuthService extends BaseService {
       profile.preferred_username ||
       null
     );
-  }
-
-  private async syncProfilePicture(user: UserAdmin, url: string) {
-    try {
-      const oldPath = user.profileImagePath;
-      const data = await this.oauthRepository.getProfilePicture(url);
-
-      const config = await this.getConfig({ withCache: true });
-      const profileImagePath = await generateProfileImage(
-        { media: this.mediaRepository, crypto: this.cryptoRepository, storageCore: this.storageCore },
-        config,
-        user.id,
-        Buffer.from(data),
-      );
-
-      await this.userRepository.update(user.id, { profileImagePath, profileChangedAt: new Date() });
-
-      if (oldPath) {
-        await this.jobRepository.queue({ name: JobName.FileDelete, data: { files: [oldPath] } });
-      }
-    } catch (error: Error | any) {
-      this.logger.warn(`Unable to sync oauth profile picture: ${error}\n${error?.stack}`);
-    }
   }
 
   async link(auth: AuthDto, dto: OAuthCallbackDto, headers: IncomingHttpHeaders): Promise<UserAdminResponseDto> {

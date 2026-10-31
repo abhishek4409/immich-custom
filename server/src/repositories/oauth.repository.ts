@@ -129,15 +129,6 @@ export class OAuthRepository {
     }
   }
 
-  async getProfilePicture(url: string) {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch picture: ${response.statusText}`);
-    }
-
-    return response.arrayBuffer();
-  }
-
   private jwksClients: Map<string, JWTVerifyGetKey> = new Map(); // useful for caching and performnce
   async validateLogoutToken(config: OAuthConfig, logoutToken: string): Promise<{ sub?: string; sid?: string } | null> {
     const client = await this.getClient(config);

@@ -63,6 +63,7 @@ export const LOGIN_URL = '/auth/login?autoLaunch=0';
 export const excludePaths = ['/.well-known/immich', '/custom.css', '/favicon.ico'];
 
 export const FACE_THUMBNAIL_SIZE = 250;
+export const PROFILE_IMAGE_MAX_SIZE = 20 * 1024 * 1024;
 
 type ModelInfo = { dimSize: number };
 export const CLIP_MODEL_INFO: Record<string, ModelInfo> = {

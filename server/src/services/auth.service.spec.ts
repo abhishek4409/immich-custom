@@ -15,7 +15,6 @@ import { UserFactory } from 'test/factories/user.factory.js';
 import { sharedLinkStub } from 'test/fixtures/shared-link.stub.js';
 import { systemConfigStub } from 'test/fixtures/system-config.stub.js';
 import { userStub } from 'test/fixtures/user.stub.js';
-import { newUuid } from 'test/small.factory.js';
 import { ServiceMocks, newTestService } from 'test/utils.js';
 
 const email = 'test@immich.com';
@@ -1052,77 +1051,12 @@ describe(AuthService.name, () => {
       expect(mocks.user.create).toHaveBeenCalledWith(expect.objectContaining({ quotaSizeInBytes: 5_368_709_120 }));
     });
 
-    it('should sync the profile picture', async () => {
-      const fileId = newUuid();
-      const user = UserFactory.create({ oauthId: 'oauth-id' });
-      const profile = OAuthProfileFactory.create({ picture: 'https://auth.immich.cloud/profiles/1.jpg' });
-      const pictureBytes = new Uint8Array([1, 2, 3, 4, 5]);
-
-      mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.oauthEnabled);
-      mocks.oauth.getProfileAndOAuthSid.mockResolvedValue({ profile });
-      mockLinked(user);
-      mocks.crypto.randomUUID.mockReturnValue(fileId);
-      mocks.oauth.getProfilePicture.mockResolvedValue(pictureBytes.buffer);
-      mocks.user.update.mockResolvedValue(user);
-      mocks.session.create.mockResolvedValue(SessionFactory.create());
-
-      await sut.callback(
-        { url: 'http://immich/auth/login?code=abc123', state: 'xyz789', codeVerifier: 'foo' },
-        {},
-        loginDetails,
-      );
-
-      expect(mocks.user.update).toHaveBeenCalledWith(user.id, {
-        profileImagePath: expect.stringContaining(`/data/profile/${user.id}/${fileId}.webp`),
-        profileChangedAt: expect.any(Date),
-      });
-      expect(mocks.oauth.getProfilePicture).toHaveBeenCalledWith(profile.picture);
-      expect(mocks.media.decodeImage).toHaveBeenCalledWith(
-        Buffer.from(pictureBytes.buffer, pictureBytes.byteOffset, pictureBytes.byteLength),
-        expect.objectContaining({ processInvalidImages: false }),
-      );
-      expect(mocks.media.generateThumbnail).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ format: 'webp', processInvalidImages: false }),
-        expect.stringContaining(`/data/profile/${user.id}/${fileId}.webp`),
-      );
-    });
-
-    it('should not update the user when thumbnail processing fails on the OAuth picture', async () => {
-      const user = UserFactory.create({ oauthId: 'oauth-id' });
+    it('should not use the profile picture from the provider', async () => {
+      const user = UserFactory.create({ oauthId: 'oauth-id', profileImagePath: '' });
       const profile = OAuthProfileFactory.create({ picture: 'https://auth.immich.cloud/profiles/1.jpg' });
 
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.oauthEnabled);
       mocks.oauth.getProfileAndOAuthSid.mockResolvedValue({ profile });
-      mockLinked(user);
-      mocks.oauth.getProfilePicture.mockResolvedValue(new Uint8Array([1, 2, 3, 4, 5]).buffer);
-      mocks.media.generateThumbnail.mockRejectedValue(new Error('not an image'));
-      mocks.session.create.mockResolvedValue(SessionFactory.create());
-
-      await expect(
-        sut.callback(
-          { url: 'http://immich/auth/login?code=abc123', state: 'xyz789', codeVerifier: 'foo' },
-          {},
-          loginDetails,
-        ),
-      ).resolves.toBeDefined();
-
-      expect(mocks.user.update).not.toHaveBeenCalled();
-      expect(mocks.job.queue).not.toHaveBeenCalled();
-    });
-
-    it('should not sync the profile picture if the user already has one', async () => {
-      const oauthId = 'oauth-id';
-      const user = UserFactory.create({ oauthId, profileImagePath: 'not-empty' });
-
-      mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.oauthEnabled);
-      mocks.oauth.getProfileAndOAuthSid.mockResolvedValue({
-        profile: OAuthProfileFactory.create({
-          sub: oauthId,
-          email: user.email,
-          picture: 'https://auth.immich.cloud/profiles/1.jpg',
-        }),
-      });
       mockLinked(user);
       mocks.user.update.mockResolvedValue(user);
       mocks.session.create.mockResolvedValue(SessionFactory.create());
@@ -1133,8 +1067,11 @@ describe(AuthService.name, () => {
         loginDetails,
       );
 
-      expect(mocks.user.update).not.toHaveBeenCalled();
-      expect(mocks.oauth.getProfilePicture).not.toHaveBeenCalled();
+      expect(mocks.user.update).not.toHaveBeenCalledWith(
+        user.id,
+        expect.objectContaining({ profileImagePath: expect.anything() }),
+      );
+      expect(mocks.media.generateThumbnail).not.toHaveBeenCalled();
     });
 
     it('should only allow "admin" and "user" for the role claim', async () => {
@@ -1444,7 +1381,6 @@ describe(AuthService.name, () => {
         sub: 'member-sub',
         immich_role: 'admin',
         immich_quota: 5,
-        picture: 'https://auth.immich.cloud/profiles/1.jpg',
       });
       const identity = UserOAuthIdentityFactory.create({
         userId: user.id,
@@ -1465,7 +1401,6 @@ describe(AuthService.name, () => {
       );
 
       expect(mocks.user.update).not.toHaveBeenCalled();
-      expect(mocks.oauth.getProfilePicture).not.toHaveBeenCalled();
       expect(mocks.userOAuthIdentity.update).toHaveBeenCalledWith(
         identity.id,
         expect.objectContaining({ lastLoginAt: expect.any(Date) }),
