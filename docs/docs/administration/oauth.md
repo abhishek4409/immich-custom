@@ -74,7 +74,7 @@ Once you have a new OAuth client application configured, Immich can be configure
 | Role Claim                                           | string  | immich_role          | Claim mapping for the user's role. (should return "user" or "admin")**¹**           |
 | Storage Quota Claim                                  | string  | immich_quota         | Claim mapping for the user's storage**¹**                                           |
 | Default Storage Quota (GiB)                          | number  | 0                    | Default quota for user without storage quota claim (empty for unlimited quota)      |
-| Button Text                                          | string  | Login with OAuth     | Text for the OAuth button on the web                                                |
+| Button Text                                          | string  | Login with OAuth     | Text for the OAuth button on the web, styled as a Google button if it says "Google" |
 | [Allow Account Sharing](#sharing-a-user-between-oauth-accounts) | boolean | false | When true, more than one OAuth account can log in to the same user |
 | Auto Register                                        | boolean | true                 | When true, will automatically register a user the first time they sign in           |
 | [Auto Launch](#auto-launch)                          | boolean | false                | When true, will skip the login page and automatically start the OAuth login process |

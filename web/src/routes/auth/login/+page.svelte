@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import AuthPageLayout from '$lib/components/layouts/AuthPageLayout.svelte';
+  import GoogleSignInButton from '$lib/components/GoogleSignInButton.svelte';
+  import LoginPageLayout from '$lib/components/layouts/LoginPageLayout.svelte';
   import { eventManager } from '$lib/managers/event-manager.svelte';
   import { serverConfigManager } from '$lib/managers/server-config-manager.svelte';
   import { Route } from '$lib/route';
@@ -27,6 +28,9 @@
 
   const serverConfig = $derived(serverConfigManager.value);
   const publicConfig = $derived(data.publicConfig);
+  const isGoogleOAuth = $derived(/\bgoogle\b/i.test(publicConfig.oauth.buttonText));
+  const isOAuthOnly = $derived(publicConfig.oauth.enabled && !publicConfig.passwordLogin.enabled);
+  const buttonClass = 'h-[46px] py-0 text-[15px]';
 
   const onSuccess = async (user: LoginResponseDto) => {
     await goto(data.continueUrl, { invalidateAll: true });
@@ -126,7 +130,7 @@
   };
 </script>
 
-<AuthPageLayout title={data.meta.title}>
+<LoginPageLayout title={$t('welcome_to_immich')} subtitle={isOAuthOnly ? $t('sign_in_to_continue') : undefined}>
   <Stack gap={4}>
     {#if publicConfig.server.loginPageMessage}
       <Alert color="primary" class="mb-6">
@@ -136,7 +140,11 @@
     {/if}
 
     {#if !oauthLoading && publicConfig.passwordLogin.enabled}
-      <form {onsubmit} class="flex flex-col gap-4">
+      <!-- Inputs stay at 16px on phones because iOS zooms the page when focusing smaller text -->
+      <form
+        {onsubmit}
+        class="flex flex-col gap-4 [&_input]:text-base md:[&_input]:text-sm [&_label]:text-[13px] [&_label]:text-inherit"
+      >
         {#if errorMessage}
           <Alert color="danger" title={errorMessage} closable />
         {/if}
@@ -149,39 +157,47 @@
           <PasswordInput id="password" bind:value={password} autocomplete="current-password" />
         </Field>
 
-        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-6">{$t('to_login')}</Button>
+        <Button type="submit" size="large" shape="round" fullWidth {loading} class="mt-1 md:mt-2 {buttonClass}"
+          >{$t('to_login')}</Button
+        >
       </form>
     {/if}
 
     {#if publicConfig.oauth.enabled}
       {#if publicConfig.passwordLogin.enabled}
-        <div class="my-4 inline-flex w-full items-center justify-center">
-          <hr class="my-4 h-px w-3/4 border-0 bg-gray-200 dark:bg-gray-600" />
-          <span
-            class="absolute inset-s-1/2 -translate-x-1/2 bg-gray-50 px-3 font-medium text-gray-900 uppercase dark:bg-neutral-900 dark:text-white"
-          >
-            {$t('or')}
-          </span>
+        <div class="flex w-full items-center gap-3 md:my-1">
+          <hr class="h-px flex-1 border-0 bg-black/30 dark:bg-white/40" />
+          <span class="text-xs font-medium tracking-wide uppercase">{$t('or')}</span>
+          <hr class="h-px flex-1 border-0 bg-black/30 dark:bg-white/40" />
         </div>
       {/if}
       {#if oauthError}
         <Alert color="danger" title={oauthError} closable />
       {/if}
-      <Button
-        shape="round"
-        loading={loading || oauthLoading}
-        disabled={loading || oauthLoading}
-        size="large"
-        fullWidth
-        color={publicConfig.passwordLogin.enabled ? 'secondary' : 'primary'}
-        onclick={handleOAuthLogin}
-      >
-        {publicConfig.oauth.buttonText}
-      </Button>
+      {#if isGoogleOAuth}
+        <GoogleSignInButton
+          text={publicConfig.oauth.buttonText}
+          loading={loading || oauthLoading}
+          onclick={handleOAuthLogin}
+        />
+      {:else}
+        <Button
+          shape="round"
+          loading={loading || oauthLoading}
+          disabled={loading || oauthLoading}
+          size="large"
+          fullWidth
+          class={buttonClass}
+          color={publicConfig.passwordLogin.enabled ? 'secondary' : 'primary'}
+          onclick={handleOAuthLogin}
+        >
+          {publicConfig.oauth.buttonText}
+        </Button>
+      {/if}
     {/if}
 
     {#if !publicConfig.passwordLogin.enabled && !publicConfig.oauth.enabled}
       <Alert color="warning" title={$t('login_has_been_disabled')} />
     {/if}
   </Stack>
-</AuthPageLayout>
+</LoginPageLayout>
